@@ -1,200 +1,74 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React from 'react'
 
 const App = () => {
-  const [isActive, setIsActive] = useState(false);
-  const [tapCount, setTapCount] = useState(0);
-  const lastTapRef = useRef(0);
-
-  // Drawing State
-  const canvasRef = useRef(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [strokes, setStrokes] = useState([]); 
-  const [currentStroke, setCurrentStroke] = useState([]); 
-
-  // Tutorial State
-  const [tutorialStep, setTutorialStep] = useState(0); 
-
-  // 1. Handle Canvas Resizing and High DPI Screens
-  const setupCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-    
-    // Redraw existing strokes if canvas remounts
-    ctx.lineWidth = 4;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = '#1a73e8';
-    
-    strokes.forEach(stroke => {
-      if (stroke.length === 0) return;
-      ctx.beginPath();
-      ctx.moveTo(stroke[0].x, stroke[0].y);
-      stroke.forEach(point => ctx.lineTo(point.x, point.y));
-      ctx.stroke();
-    });
-  }, [strokes]);
-
-  useEffect(() => {
-    if (isActive) {
-      setupCanvas();
-      window.addEventListener('resize', setupCanvas);
-    }
-    return () => window.removeEventListener('resize', setupCanvas);
-  }, [isActive, setupCanvas]);
-
-  // 2. Tutorial Logic
-  useEffect(() => {
-    const isNewUser = !localStorage.getItem('tutorialCompleted');
-    if (isNewUser && isActive) {
-      setTutorialStep(1);
-    }
-  }, [isActive]);
-
-  // 3. Activation Logic
-  const handleTripleClick = () => {
-    const now = Date.now();
-    const diff = now - lastTapRef.current;
-    
-    if (diff < 400) {
-      setTapCount(prev => {
-        const newCount = prev + 1;
-        if (newCount === 3) {
-          setIsActive(true);
-          return 0;
-        }
-        return newCount;
-      });
-    } else {
-      setTapCount(1);
-    }
-    lastTapRef.current = now;
-  };
-
-  const getCoordinates = (e) => {
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    };
-  };
-
-  const startDrawing = (e) => {
-    if (!isActive) return;
-    setIsDrawing(true);
-    const { x, y } = getCoordinates(e);
-    
-    const ctx = canvasRef.current.getContext('2d');
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    setCurrentStroke([{ x, y }]);
-  };
-
-  const draw = (e) => {
-    if (!isDrawing || !isActive) return;
-    const { x, y } = getCoordinates(e);
-    
-    const ctx = canvasRef.current.getContext('2d');
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    setCurrentStroke(prev => [...prev, { x, y }]);
-  };
-
-  const stopDrawing = () => {
-    if (!isDrawing) return;
-    setIsDrawing(false);
-    
-    if (currentStroke.length > 0) {
-      setStrokes(prev => [...prev, currentStroke]);
-    }
-
-    if (tutorialStep === 1) {
-      setTutorialStep(0);
-      localStorage.setItem('tutorialCompleted', 'true');
-    }
-    setCurrentStroke([]);
-  };
-
   return (
-    <div 
-      onMouseDown={(e) => !isActive && handleTripleClick()} 
-      onContextMenu={(e) => e.preventDefault()} 
-      style={{ height: '100vh', width: '100vw', cursor: isActive ? 'crosshair' : 'default', userSelect: 'none', overflow: 'hidden', position: 'relative' }}
-    >
-      {/* Background Content */}
-      <div style={{ padding: '40px', filter: isActive ? 'blur(10px)' : 'none', transition: 'filter 0.4s ease' }}>
-        <h1 style={{ color: '#1a73e8' }}>Screen Gesture Navigation System</h1>
-        <p style={{ fontSize: '1.2rem' }}>Triple-click anywhere to activate the gesture layer.</p>
-        
-        <div style={cardStyle}>
-          <h3>Available Services</h3>
-          <p>Draw a gesture to interact with the system.</p>
+    <div style={{ minHeight: '100vh', padding: 0, fontFamily: 'sans-serif',  userSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}>
+
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 2rem 2rem', textAlign: 'center' }}>
+        <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#f4f4f5', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
+          <span style={{ fontSize: 24 }}>👆</span>
+        </div>
+        <h1 style={{ fontSize: 22, fontWeight: 500, margin: '0 0 0.5rem' }}>Gesture Navigator</h1>
+        <p style={{ fontSize: 15, color: '#6b7280', margin: 0, maxWidth: 340, lineHeight: 1.6 }}>
+          Navigate anywhere by drawing shapes on screen — no buttons needed.
+        </p>
+      </div>
+
+      <div style={{ margin: '0 auto 2rem', maxWidth: 480, padding: '0 1.5rem' }}>
+        <div style={{ background: '#f9fafb', borderRadius: 12, border: '1px solid #e5e7eb', padding: '1.25rem 1.5rem' }}>
+          <p style={{ fontSize: 12, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', margin: '0 0 1rem' }}>How to activate</p>
+
+          {[
+            { n: 1, title: 'Triple tap anywhere', desc: 'Tap the screen 3 times quickly within 600ms to enter gesture mode.' },
+            { n: 2, title: 'Draw your gesture', desc: 'A dashed purple border appears — draw any shape to navigate.' },
+            { n: 3, title: "You're navigated", desc: 'Lift your finger — after a short pause the page changes automatically.' },
+          ].map(({ n, title, desc }) => (
+            <div key={n} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: n < 3 ? '1rem' : 0 }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fff', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 13, fontWeight: 500 }}>{n}</span>
+              </div>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 500, margin: '0 0 2px' }}>{title}</p>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>{desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Drawing Canvas */}
-      {isActive && (
-        <canvas
-          ref={canvasRef}
-          onMouseDown={startDrawing}
-          onMouseMove={draw}
-          onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
-          style={{ 
-            position: 'absolute', 
-            top: 0, 
-            left: 0, 
-            width: '100%', 
-            height: '100%', 
-            zIndex: 10, 
-            background: 'rgba(255, 255, 255, 0.4)',
-            touchAction: 'none' // Prevents scrolling while drawing on mobile
-          }}
-        />
-      )}
-
-      {/* Visual Instruction Overlay */}
-      {isActive && tutorialStep === 1 && (
-        <div style={instructionBox}>
-            <p>कृपया स्क्रिनमा एउटा गोलो (Circle) बनाउनुहोस्।</p>
+      <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 1.5rem 2rem' }}>
+        <p style={{ fontSize: 12, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', margin: '0 0 0.75rem' }}>Available gestures</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {[
+            { symbol: '○', name: 'Circle',   dest: 'Page 1' },
+            { symbol: '△', name: 'Triangle', dest: 'Page 2' },
+            { symbol: '✓', name: 'Check',    dest: 'Page 3' },
+            { symbol: '∧', name: 'Caret',    dest: 'Page 4' },
+            { symbol: '→', name: 'Arrow',    dest: 'Draw'   },
+            { symbol: 'ρ', name: 'Pigtail',  dest: 'Page 5' },
+          ].map(({ symbol, name, dest }) => (
+            <div key={name} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 22, lineHeight: 1 }}>{symbol}</span>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 500, margin: 0 }}>{name}</p>
+                <p style={{ fontSize: 12, color: '#6b7280', margin: 0 }}>→ {dest}</p>
+              </div>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
 
-      {/* Controls */}
-      {isActive && (
-        <div style={controlPanelStyle}>
-          <button onClick={() => {
-            const canvas = canvasRef.current;
-            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-            setStrokes([]);
-          }} style={btnStyle}>Clear</button>
-          
-          <button onClick={() => {
-            setIsActive(false);
-            setStrokes([]);
-          }} style={btnStyle}>Exit</button>
-          
-          <button 
-            onClick={() => console.log("Gesture Data:", strokes)} 
-            style={{...btnStyle, background: '#28a745', color: 'white'}}
-          >
-            Analyze ({strokes.length})
-          </button>
+      <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 1.5rem 3rem' }}>
+        <div style={{ background: '#f9fafb', borderRadius: 8, border: '1px solid #e5e7eb', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 18, color: '#9ca3af' }}>⌨</span>
+          <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
+            Press <kbd style={{ background: '#fff', border: '1px solid #d1d5db', borderRadius: 4, padding: '1px 6px', fontSize: 12, fontFamily: 'monospace' }}>Esc</kbd> at any time to cancel a gesture.
+          </p>
         </div>
-      )}
+      </div>
+
     </div>
-  );
-};
+  )
+}
 
-const cardStyle = { marginTop: '20px', border: '1px solid #ddd', padding: '30px', borderRadius: '15px', background: '#f8f9fa' };
-const instructionBox = { position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', background: '#1a73e8', color: 'white', padding: '15px 30px', borderRadius: '30px', zIndex: 100, fontSize: '1.5rem', fontWeight: 'bold', pointerEvents: 'none' };
-const controlPanelStyle = { position: 'absolute', bottom: '30px', left: '50%', transform: 'translateX(-50%)', zIndex: 20, display: 'flex', gap: '15px' };
-const btnStyle = { padding: '12px 25px', borderRadius: '25px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.2)', cursor: 'pointer', fontWeight: 'bold' };
-
-export default App;
+export default App

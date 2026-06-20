@@ -6,6 +6,8 @@ A React app that lets you navigate between pages by drawing shapes on the screen
 
 Triple-tap anywhere on the screen to enter gesture mode. A dashed purple border appears — draw a shape, lift your finger, and you're navigated. Press `Esc` to cancel.
 
+🔗 **Live demo:** [gesture-navigator.vercel.app](gesture-navigation-accessibility-sy.vercel.app)
+
 ## Gestures
 
 | Shape | Navigates to |
